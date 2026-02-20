@@ -1,0 +1,21 @@
+[package]
+name = "screenshot-ocr"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+base64 = "0.22"
+ureq = { version = "3.2", default-features = false, features = ["json", "rustls"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+notify-rust = { version = "4.12", default-features = false, features = ["d"] }
+anyhow = "1.0"
+toml = "0.8"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
