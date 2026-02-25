@@ -149,5 +149,5 @@ MIT
 
 ## Credits
 
-- OCR powered by [GLM-4V](https://open.bigmodel.cn/)
+- OCR powered by [GLM-OCR](https://open.bigmodel.cn/)
 - Built for [niri](https://github.com/YaLTeR/niri) Wayland compositor
