@@ -1,4 +1,4 @@
-use notify_rust::{Notification, NotificationHandle, Timeout};
+use notify_rust::{Notification, NotificationHandle};
 
 /// Manages a replaceable notification lifecycle: processing → result.
 pub struct NotificationManager {
@@ -11,7 +11,7 @@ impl NotificationManager {
         let handle = Notification::new()
             .summary("OCR")
             .body("Processing screenshot...")
-            .timeout(Timeout::Never)
+            .timeout(0)
             .show()
             .ok();
 
@@ -37,20 +37,18 @@ impl NotificationManager {
         self.replace("OCR Warning", message, 4000);
     }
 
-    fn replace(mut self, summary: &str, body: &str, timeout_ms: i32) {
-        if let Some(ref mut handle) = self.handle {
-            handle.summary(summary);
-            handle.body(body);
-            handle.timeout(Timeout::Milliseconds(timeout_ms as u32));
-            handle.update();
-        } else {
-            // Fallback: show a new notification
-            let _ = Notification::new()
-                .summary(summary)
-                .body(body)
-                .timeout(timeout_ms)
-                .show();
+    fn replace(self, summary: &str, body: &str, timeout_ms: i32) {
+        // Close the processing notification, then show a fresh one.
+        // update() on a dismissed notification won't re-appear,
+        // so always create a new notification for the result.
+        if let Some(handle) = self.handle {
+            handle.close();
         }
+        let _ = Notification::new()
+            .summary(summary)
+            .body(body)
+            .timeout(timeout_ms)
+            .show();
     }
 }
 
