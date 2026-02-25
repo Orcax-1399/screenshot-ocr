@@ -4,6 +4,8 @@ use base64::Engine;
 use image::{DynamicImage, GenericImageView};
 use serde::{Deserialize, Serialize};
 use std::io::Cursor;
+use std::time::Duration;
+use ureq::Agent;
 
 pub struct GlmOcrProvider {
     api_key: String,
@@ -11,6 +13,7 @@ pub struct GlmOcrProvider {
     model: String,
     max_edge: u32,
     jpeg_quality: u8,
+    timeout_secs: u64,
 }
 
 #[derive(Serialize)]
@@ -40,6 +43,7 @@ impl GlmOcrProvider {
         model: String,
         max_edge: u32,
         jpeg_quality: u8,
+        timeout_secs: u64,
     ) -> Self {
         Self {
             api_key,
@@ -47,6 +51,7 @@ impl GlmOcrProvider {
             model,
             max_edge,
             jpeg_quality,
+            timeout_secs,
         }
     }
 
@@ -109,8 +114,14 @@ impl OcrProvider for GlmOcrProvider {
             file: data_url,
         };
 
-        // Send request
-        let mut response = ureq::post(&self.endpoint)
+        // Send request with timeout
+        let agent: Agent = Agent::config_builder()
+            .timeout_global(Some(Duration::from_secs(self.timeout_secs)))
+            .build()
+            .into();
+
+        let mut response = agent
+            .post(&self.endpoint)
             .header("Content-Type", "application/json")
             .header("Authorization", &self.api_key)
             .send_json(&request)

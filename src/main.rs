@@ -4,6 +4,7 @@ mod notifier;
 mod provider;
 
 use anyhow::{Context, Result};
+use notifier::NotificationManager;
 use provider::{glm::GlmOcrProvider, OcrProvider};
 use std::io::Read;
 
@@ -30,6 +31,9 @@ fn run() -> Result<()> {
         anyhow::bail!("No image data received from stdin");
     }
 
+    // Show processing notification immediately
+    let manager = NotificationManager::show_processing();
+
     // Create OCR provider
     let provider = GlmOcrProvider::new(
         config.api_key,
@@ -37,24 +41,32 @@ fn run() -> Result<()> {
         config.api.model,
         config.image.max_edge,
         config.image.jpeg_quality,
+        config.api.timeout_secs,
     );
 
     // Perform OCR
-    let text = provider
-        .extract_text(&image_data)
-        .context("Failed to perform OCR")?;
+    let text = match provider.extract_text(&image_data) {
+        Ok(text) => text,
+        Err(e) => {
+            manager.finish_error(&format!("{:#}", e));
+            return Err(e.context("Failed to perform OCR"));
+        }
+    };
 
     // Check if text is empty
     if text.trim().is_empty() {
-        notifier::notify_warning("No text detected");
+        manager.finish_warning("No text detected");
         return Ok(());
     }
 
     // Copy to clipboard
-    clipboard::copy_to_clipboard(&text).context("Failed to copy to clipboard")?;
+    if let Err(e) = clipboard::copy_to_clipboard(&text) {
+        manager.finish_error(&format!("{:#}", e));
+        return Err(e.context("Failed to copy to clipboard"));
+    }
 
     // Show success notification
-    notifier::notify_success(text.chars().count());
+    manager.finish_success(text.chars().count());
 
     Ok(())
 }

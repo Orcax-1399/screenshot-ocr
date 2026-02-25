@@ -25,6 +25,8 @@ pub struct ApiConfig {
     pub endpoint: String,
     #[serde(default = "default_model")]
     pub model: String,
+    #[serde(default = "default_timeout_secs")]
+    pub timeout_secs: u64,
 }
 
 fn default_max_edge() -> u32 {
@@ -43,6 +45,10 @@ fn default_model() -> String {
     "glm-ocr".to_string()
 }
 
+fn default_timeout_secs() -> u64 {
+    30
+}
+
 impl Default for ImageConfig {
     fn default() -> Self {
         Self {
@@ -57,6 +63,7 @@ impl Default for ApiConfig {
         Self {
             endpoint: default_endpoint(),
             model: default_model(),
+            timeout_secs: default_timeout_secs(),
         }
     }
 }
